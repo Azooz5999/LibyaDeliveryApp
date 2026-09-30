@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق سَوِّم - للتوصيل والمزاد في ليبيا</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Arabic Font: Readex Pro -->
+    <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        libyaPrimary: '#1E3A8A',   // أزرق ملكي
+                        libyaSecondary: '#10B981', // أخضر زمردي
+                        libyaAccent: '#F59E0B',    // برتقالي ذهبي
+                        libyaDark: '#0F172A',
+                        libyaLight: '#F8FAFC'
+                    },
+                    fontFamily: {
+                        sans: ['Readex Pro', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Readex Pro', sans-serif; background-color: #F8FAFC; }
+        .map-bg {
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen">
+
+    <!-- Top Header / App Bar -->
+    <header class="bg-libyaPrimary text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-libyaAccent text-white rounded-xl flex items-center justify-center font-bold text-xl shadow">
+                    <i class="fa-solid font-bold fa-car-side"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">سَوِّم <span class="text-xs bg-libyaAccent/30 text-libyaAccent px-2 py-0.5 rounded-full border border-libyaAccent/50">ليبيا</span></h1>
+                    <p class="text-[10px] text-slate-300">توصيل بحرية - أنت حدد السعر</p>
+                </div>
+            </div>
+
+            <!-- City Selector -->
+            <div class="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-lg border border-white/20 text-xs">
+                <i class="fa-solid fa-location-dot text-libyaAccent"></i>
+                <span>المدينة:</span>
+                <select id="citySelect" onchange="changeCity(this.value)" class="bg-transparent text-white font-bold focus:outline-none cursor-pointer">
+                    <option value="طرابلس" class="text-slate-800">طرابلس</option>
+                    <option value="بنغازي" class="text-slate-800">بنغازي</option>
+                    <option value="مصراتة" class="text-slate-800">مصراتة</option>
+                    <option value="الزاوية" class="text-slate-800">الزاوية</option>
+                    <option value="غريان" class="text-slate-800">غريان / الجبل</option>
+                    <option value="سبها" class="text-slate-800">سبها</option>
+                </select>
+            </div>
+
+            <!-- Role Switcher Tabs -->
+            <div class="flex bg-slate-900/40 p-1 rounded-xl text-xs font-medium">
+                <button onclick="switchRole('passenger')" id="btn-passenger" class="role-btn px-4 py-1.5 rounded-lg transition-all bg-libyaAccent text-white font-bold shadow">
+                    <i class="fa-solid fa-user-tag ml-1"></i> الراكب
+                </button>
+                <button onclick="switchRole('driver')" id="btn-driver" class="role-btn px-4 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-taxi ml-1"></i> السائق
+                </button>
+                <button onclick="switchRole('admin')" id="btn-admin" class="role-btn px-4 py-1.5 rounded-lg transition-all text-slate-300 hover:text-white">
+                    <i class="fa-solid fa-shield-halved ml-1"></i> الأدمن
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6">
+
+        <!-- ==================== PASSENGER VIEW ==================== -->
+        <section id="view-passenger" class="space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Request Form Panel -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+                    <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-paper-plane text-libyaPrimary text-lg"></i>
+                        <h2 class="font-bold text-lg text-slate-800">إنشاء طلب توصيل جديد</h2>
+                    </div>
+
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600 block mb-1">نوع الخدمة</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" class="border border-libyaPrimary bg-libyaPrimary/5 text-libyaPrimary font-bold text-xs py-2 rounded-xl flex flex-col items-center gap-1">
+                                <i class="fa-solid fa-user-group text-base"></i> ركاب
+                            </button>
+                            <button type="button" class="border border-slate-200 text-slate-600 text-xs py-2 rounded-xl flex flex-col items-center gap-1 hover:border-libyaPrimary">
+                                <i class="fa-solid fa-box text-base"></i> طرود وسريعة
+                            </button>
+                            <button type="button" class="border border-slate-200 text-slate-600 text-xs py-2 rounded-xl flex flex-col items-center gap-1 hover:border-libyaPrimary">
+                                <i class="fa-solid fa-truck-ram text-base"></i> نقل ثقيل
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600 block mb-1">موقع الانطلاق</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-circle-dot text-libyaSecondary absolute right-3 top-3 text-sm"></i>
+                                <input type="text" id="pickupInput" value="طرابلس - ميدان الشهداء" class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm focus:outline-none focus:border-libyaPrimary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600 block mb-1">الوجهة (إلى أين؟)</label>
+                            <div class="relative">
+                                <i class="fa-solid fa-location-dot text-libyaAccent absolute right-3 top-3 text-sm"></i>
+                                <input type="text" id="destInput" placeholder="أدخل المكان المقصود (مثلاً: حي الأندلس)" class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-9 pl-3 py-2 text-sm focus:outline-none focus:border-libyaPrimary">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="text-xs font-semibold text-slate-600 block mb-1">اقترح السعر المناسب لك (دينار ليبي)</label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-xs font-bold text-slate-400">د.ل</span>
+                                <input type="number" id="priceInput" placeholder="20" class="w-full bg-slate-50 border border-slate-200 rounded-xl pr-3 pl-10 py-2.5 text-base font-bold text-libyaSecondary focus:outline-none focus:border-libyaSecondary">
+                            </div>
+                            <p class="text-[11px] text-slate-400 mt-1">السائقون القريبون سيرون عرضك ويقررون القبول أو المساومة.</p>
+                        </div>
+                    </div>
+
+                    <button onclick="createRideRequest()" class="w-full bg-libyaAccent hover:bg-amber-600 text-white font-bold py-3 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 text-sm">
+                        <i class="fa-solid fa-bullhorn"></i> نشر الطلب في المزاد
+                    </button>
+                </div>
+
+                <!-- Live Map Mockup & Active Requests -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Interactive Map Card -->
+                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200/80">
+                        <div class="h-48 rounded-xl map-bg bg-slate-100 border border-slate-200 relative flex items-center justify-center overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent"></div>
+                            
+                            <!-- Animated Pins -->
+                            <div class="relative z-10 flex flex-col items-center animate-bounce">
+                                <span class="bg-libyaPrimary text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow mb-1">موقعك الحالي</span>
+                                <i class="fa-solid fa-location-dot text-3xl text-libyaPrimary"></i>
+                            </div>
+
+                            <div class="absolute bottom-3 right-3 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 shadow border border-slate-200">
+                                <i class="fa-solid fa-car text-libyaSecondary ml-1"></i> متوفر <span id="activeDriversCount">4</span> سائقين نشطين في نطاقك
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Passenger Active Requests & Offers Stream -->
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80">
+                        <h3 class="font-bold text-base text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-libyaAccent"></i> طلبي الحالي وعروض السائقين
+                        </h3>
+
+                        <div id="passengerRideStatus" class="space-y-4">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ==================== DRIVER VIEW ==================== -->
+        <section id="view-driver" class="space-y-6 hidden">
+            
+            <!-- Driver Subscription Banner -->
+            <div id="driverSubBanner" class="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-emerald-500 text-white rounded-2xl flex items-center justify-center text-xl font-bold shadow">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-slate-800 text-base" id="driverNameTitle">السائق: طارق الرفادي</h3>
+                            <span id="subBadge" class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold border border-emerald-300">الاشتراك مفعل</span>
+                        </div>
+                        <p class="text-xs text-slate-600 mt-0.5">سيارة: تويوتا كامري 2020 (أبيض) | الركوبة كاملة لك بدون عمولة!</p>
+                    </div>
+                </div>
+                <div class="text-left md:text-right bg-white px-4 py-2 rounded-xl border border-emerald-200">
+                    <span class="text-[11px] text-slate-500 block">صلاحية الاشتراك الشهري</span>
+                    <span class="text-xs font-bold text-emerald-700" id="subExpiryDate">متبقي 24 يوم (ينتهي 2026/10/24)</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Driver Status & Toggle -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 space-y-4">
+                    <h3 class="font-bold text-base text-slate-800 border-b border-slate-100 pb-2">حالة الاستقبال</h3>
+                    
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <span class="text-sm font-semibold text-slate-700">استقبال طلبات جديدة</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" checked class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-libyaSecondary"></div>
+                        </label>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
+                        <div class="font-bold flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb"></i> نصيحة لزيادة أرباحك:
+                        </div>
+                        <p>يمكنك قبول طلب العميل مباشرة لسرعة الانطلاق، أو إرسال عرض مناسب إذا كانت المسافة أطول.</p>
+                    </div>
+
+                    <!-- Driver Documents Verification Status -->
+                    <div class="border-t border-slate-100 pt-3 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-700">مستندات المركبة الموثقة:</h4>
+                        <div class="text-xs space-y-1 text-slate-600">
+                            <div class="flex items-center justify-between"><span class="text-slate-500"><i class="fa-solid fa-circle-check text-emerald-500 ml-1"></i> إثبات الهوية / الرخصة:</span> <span class="font-semibold">موثق</span></div>
+                            <div class="flex items-center justify-between"><span class="text-slate-500"><i class="fa-solid fa-circle-check text-emerald-500 ml-1"></i> صـورة السيارة:</span> <span class="font-semibold">معتمدة</span></div>
+                            <div class="flex items-center justify-between"><span class="text-slate-500"><i class="fa-solid fa-circle-check text-emerald-500 ml-1"></i> المدينة المسجلة:</span> <span class="font-bold text-libyaPrimary" id="driverCityTag">طرابلس</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Available Rides Feed -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-libyaPrimary"></i> طلبات التوصيل المتاحة الآن في <span class="text-libyaPrimary" id="driverViewCity">طرابلس</span>
+                        </h3>
+                        <span class="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold" id="ridesCountTag">2 طلبات</span>
+                    </div>
+
+                    <div id="driverRidesFeed" class="space-y-4">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== ADMIN DASHBOARD VIEW ==================== -->
+        <section id="view-admin" class="space-y-6 hidden">
+            <!-- Stats Header -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-blue-100 text-libyaPrimary rounded-xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block font-medium">إجمالي السائقين</span>
+                        <span class="text-xl font-bold text-slate-800" id="statTotalDrivers">12 سائق</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-amber-100 text-libyaAccent rounded-xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-user-clock"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block font-medium">طلبات التوثيق المعلقة</span>
+                        <span class="text-xl font-bold text-amber-600" id="statPendingApprovals">1 سائق</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block font-medium">الاشتراكات النشطة</span>
+                        <span class="text-xl font-bold text-emerald-600" id="statActiveSubs">11 سائق</span>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                    <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-xl font-bold">
+                        <i class="fa-solid fa-route"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-500 block font-medium">قيمة الاشتراك الشهري</span>
+                        <span class="text-xl font-bold text-purple-700">50 د.ل / شهر</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Driver Verification Requests -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <h3 class="font-bold text-base text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-user-check text-libyaAccent"></i> طلبات تفعيل وتوثيق حسابات السائقين المودعة
+                    </h3>
+                    <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-semibold">تتطلب مراجعة الأوراق</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm text-slate-700">
+                        <thead class="bg-slate-50 text-slate-500 text-xs font-semibold border-y border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">اسم السائق والهاتف</th>
+                                <th class="py-3 px-4">المدينة</th>
+                                <th class="py-3 px-4">بيانات السيارة واللوحة</th>
+                                <th class="py-3 px-4">صورة الهوية / الرخصة</th>
+                                <th class="py-3 px-4 text-center">الإجراء</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingDriversTable" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- All Registered Drivers & Subscription Control -->
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                <h3 class="font-bold text-base text-slate-800 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-id-badge text-libyaPrimary"></i> إدارة اشتراكات السائقين والتحكم بالتجديد
+                </h3>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right text-sm text-slate-700">
+                        <thead class="bg-slate-50 text-slate-500 text-xs font-semibold border-y border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">السائق</th>
+                                <th class="py-3 px-4">المدينة</th>
+                                <th class="py-3 px-4">حالة التوثيق</th>
+                                <th class="py-3 px-4">حالة الاشتراك الشهري</th>
+                                <th class="py-3 px-4">تاريخ الانتهاء</th>
+                                <th class="py-3 px-4 text-center">تجديد الاشتراك (30 يوم)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allDriversTable" class="divide-y divide-slate-100">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 mt-auto py-4 text-center text-xs text-slate-500">
+        <p>تطبيق <strong>سَوِّم ليبيا</strong> - المنصة الموحدة للتوصيل بدون عمولات اقتطاعية © 2026</p>
+    </footer>
+
+    <!-- Application JavaScript Code -->
+    <script>
+        // Default State Data
+        let currentCity = 'طرابلس';
+        let currentRole = 'passenger';
+
+        // Sample Ride Requests in Libya
+        let rideRequests = [
+            {
+                id: 101,
+                passengerName: "عمر سالم",
+                city: "طرابلس",
+                pickup: "حي الأندلس - بالقرب من القنصلية",
+                dest: "مطار معيتيقة الدولي",
+                offeredPrice: 25,
+                type: "ركاب",
+                status: "negotiating",
+                counterOffers: [
+                    { driverId: 1, driverName: "طارق الرفادي", driverCar: "تويوتا كامري", price: 30, rating: "4.9" },
+                    { driverId: 2, driverName: "مصطفى الزوي", driverCar: "هيونداي أفانتي", price: 25, rating: "4.8" }
+                ]
+            },
+            {
+                id: 102,
+                passengerName: "سارة المجدوب",
+                city: "طرابلس",
+                pickup: "النوفليين",
+                dest: "جامعة طرابلس - القاطع أ",
+                offeredPrice: 15,
+                type: "ركاب",
+                status: "pending",
+                counterOffers: []
+            },
+            {
+                id: 103,
+                passengerName: "خالد التاجوري",
+                city: "بنغازي",
+                pickup: "الفويهات",
+                dest: "الهواري",
+                offeredPrice: 20,
+                type: "ركاب",
+                status: "pending",
+                counterOffers: []
+            }
+        ];
+
+        // Sample Drivers Database
+        let drivers = [
+            {
+                id: 1,
+                name: "طارق الرفادي",
+                phone: "091-2345678",
+                city: "طرابلس",
+                carInfo: "تويوتا كامري 2020 - أبيض",
+                plateNumber: "5-123456",
+                isApproved: true,
+                subActive: true,
+                subDaysLeft: 24,
+                docType: "رخصة قيادة + بطاقة شخصية"
+            },
+            {
+                id: 2,
+                name: "مصطفى الزوي",
+                phone: "092-8765432",
+                city: "طرابلس",
+                carInfo: "هيونداي أفانتي 2018 - رصاصي",
+                plateNumber: "5-654321",
+                isApproved: true,
+                subActive: true,
+                subDaysLeft: 12,
+                docType: "جواز سفر ليبيا"
+            },
+            {
+                id: 3,
+                name: "عبدالسلام الورفلي",
+                phone: "091-9988776",
+                city: "طرابلس",
+                carInfo: "كيا سيراتو 2019 - أسود",
+                plateNumber: "5-778899",
+                isApproved: false, // Pending Admin Approval
+                subActive: false,
+                subDaysLeft: 0,
+                docType: "رخصة قيادة"
+            },
+            {
+                id: 4,
+                name: "أحمد المصراتي",
+                phone: "091-5544332",
+                city: "مصراتة",
+                carInfo: "تويوتا كورولا 2017",
+                plateNumber: "12-443322",
+                isApproved: true,
+                subActive: true,
+                subDaysLeft: 18,
+                docType: "بطاقة شخصية"
+            }
+        ];
+
+        // Switch App Role (Passenger, Driver, Admin)
+        function switchRole(role) {
+            currentRole = role;
+            
+            // Highlight Buttons
+            document.querySelectorAll('.role-btn').forEach(btn => {
+                btn.classList.remove('bg-libyaAccent', 'text-white', 'font-bold', 'shadow');
+                btn.classList.add('text-slate-300');
+            });
+
+            const activeBtn = document.getElementById(`btn-${role}`);
+            activeBtn.classList.add('bg-libyaAccent', 'text-white', 'font-bold', 'shadow');
+            activeBtn.classList.remove('text-slate-300');
+
+            // Toggle Views
+            document.getElementById('view-passenger').classList.add('hidden');
+            document.getElementById('view-driver').classList.add('hidden');
+            document.getElementById('view-admin').classList.add('hidden');
+
+            document.getElementById(`view-${role}`).classList.remove('hidden');
+
+            renderAll();
+        }
+
+        // Change Current Libya City
+        function changeCity(city) {
+            currentCity = city;
+            document.getElementById('driverCityTag').innerText = city;
+            document.getElementById('driverViewCity').innerText = city;
+            renderAll();
+        }
+
+        // Create New Ride Request (Passenger)
+        function createRideRequest() {
+            const pickup = document.getElementById('pickupInput').value.trim();
+            const dest = document.getElementById('destInput').value.trim();
+            const price = parseFloat(document.getElementById('priceInput').value);
+
+            if (!dest || !price || price <= 0) {
+                alert("يرجى إدخال مكان الوجهة والسعر الافتراضي المقترح بالدينار الليبي.");
+                return;
+            }
+
+            const newRide = {
+                id: Date.now(),
+                passengerName: "أنت (الراكب الحالي)",
+                city: currentCity,
+                pickup: pickup,
+                dest: dest,
+                offeredPrice: price,
+                type: "ركاب",
+                status: "pending",
+                counterOffers: []
+            };
+
+            rideRequests.unshift(newRide);
+            document.getElementById('destInput').value = '';
+            document.getElementById('priceInput').value = '';
+
+            renderPassengerRides();
+            renderDriverRides();
+            alert("تم نشر طلبك بنجاح في مزاد التوصيل! سيظهر الآن للسائقين القريبين.");
+        }
+
+        // Driver Submit Counter Offer (المساومة)
+        function submitCounterOffer(rideId) {
+            const inputEl = document.getElementById(`counter-input-${rideId}`);
+            const counterPrice = parseFloat(inputEl.value);
+
+            if (!counterPrice || counterPrice <= 0) {
+                alert("يرجى إدخال السعر المقترح للمساومة.");
+                return;
+            }
+
+            const ride = rideRequests.find(r => r.id === rideId);
+            if (ride) {
+                ride.status = "negotiating";
+                ride.counterOffers.push({
+                    driverId: 1,
+                    driverName: "طارق الرفادي (أنت)",
+                    driverCar: "تويوتا كامري 2020",
+                    price: counterPrice,
+                    rating: "5.0"
+                });
+                renderAll();
+                alert(`تم تقديم عرضك المقابل بمبلغ ${counterPrice} د.ل للراكب.`);
+            }
+        }
+
+        // Driver Accept Passenger Price Directly
+        function acceptPassengerPrice(rideId, price) {
+            const ride = rideRequests.find(r => r.id === rideId);
+            if (ride) {
+                ride.status = "accepted";
+                ride.acceptedDriver = "طارق الرفادي (أنت)";
+                ride.finalPrice = price;
+                renderAll();
+                alert(`مبروك! تم قبول الطلب بسعر العميل (${price} د.ل). يمكنك الاتصال به الآن.`);
+            }
+        }
+
+        // Passenger Accepts a Specific Driver Offer
+        function passengerAcceptOffer(rideId, offer) {
+            const ride = rideRequests.find(r => r.id === rideId);
+            if (ride) {
+                ride.status = "accepted";
+                ride.acceptedDriver = offer.driverName;
+                ride.finalPrice = offer.price;
+                renderAll();
+                alert(`تم اختيار السائق ${offer.driverName} بسعر ${offer.price} د.ل. السائق في طريقه إليك!`);
+            }
+        }
+
+        // Admin Actions
+        function approveDriver(driverId) {
+            const driver = drivers.find(d => d.id === driverId);
+            if (driver) {
+                driver.isApproved = true;
+                driver.subActive = true;
+                driver.subDaysLeft = 30;
+                renderAdminDashboard();
+                alert(`تم تفعيل توثيق وتنشيط اشتراك السائق ${driver.name} بنجاح!`);
+            }
+        }
+
+        function renewSubscription(driverId) {
+            const driver = drivers.find(d => d.id === driverId);
+            if (driver) {
+                driver.subActive = true;
+                driver.subDaysLeft = 30;
+                renderAdminDashboard();
+                alert(`تم تجديد الاشتراك الشهري للسائق ${driver.name} لمدة 30 يوماً إضافية.`);
+            }
+        }
+
+        // Render Passenger Screen
+        function renderPassengerRides() {
+            const container = document.getElementById('passengerRideStatus');
+            const cityRides = rideRequests.filter(r => r.city === currentCity);
+
+            if (cityRides.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-car-side text-3xl mb-2 text-slate-300"></i>
+                        <p class="text-sm">لا يوجد لديك طلبات معلقة حالياً في ${currentCity}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cityRides.map(ride => {
+                let statusTag = '';
+                if (ride.status === 'pending') {
+                    statusTag = `<span class="bg-amber-100 text-amber-800 text-xs px-2.5 py-0.5 rounded-full font-bold">في انتظار عروض السائقين</span>`;
+                } else if (ride.status === 'negotiating') {
+                    statusTag = `<span class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold">وصلتك عروض مساومة (${ride.counterOffers.length})</span>`;
+                } else if (ride.status === 'accepted') {
+                    statusTag = `<span class="bg-emerald-100 text-emerald-800 text-xs px-2.5 py-0.5 rounded-full font-bold">تم الاتفاق والانطلاق 🚀</span>`;
+                }
+
+                let offersHtml = '';
+                if (ride.status !== 'accepted' && ride.counterOffers.length > 0) {
+                    offersHtml = `
+                        <div class="mt-3 border-t border-slate-100 pt-3 space-y-2">
+                            <span class="text-xs font-bold text-slate-700 block">العروض المقدمة لك من السائقين:</span>
+                            ${ride.counterOffers.map(off => `
+                                <div class="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 bg-libyaPrimary text-white rounded-full flex items-center justify-center text-xs font-bold">
+                                            <i class="fa-solid fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <p class="text-xs font-bold text-slate-800">${off.driverName} <span class="text-[10px] text-amber-500 font-normal">★ ${off.rating}</span></p>
+                                            <p class="text-[11px] text-slate-500">${off.driverCar}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-sm font-bold text-libyaSecondary">${off.price} د.ل</span>
+                                        <button onclick='passengerAcceptOffer(${ride.id},${JSON.stringify(off)})' class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-bold shadow-sm">
+                                            قبول
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (ride.status === 'accepted') {
+                    offersHtml = `
+                        <div class="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-xs font-semibold">
+                            السائق المقبول: ${ride.acceptedDriver} | السعر النهائي: ${ride.finalPrice} د.ل
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-slate-500">${ride.passengerName}</span>
+                            ${statusTag}
+                        </div>
+                        <div class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                            <span>${ride.pickup}</span>
+                            <i class="fa-solid fa-arrow-left text-xs text-slate-400"></i>
+                            <span>${ride.dest}</span>
+                        </div>
+                        <div class="text-xs text-slate-600">
+                            السعر المبدئي المقترح منك: <span class="font-bold text-libyaSecondary text-sm">${ride.offeredPrice} د.ل</span>
+                        </div>
+                        ${offersHtml}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Render Driver Screen
+        function renderDriverRides() {
+            const container = document.getElementById('driverRidesFeed');
+            const cityRides = rideRequests.filter(r => r.city === currentCity && r.status !== 'accepted');
+
+            document.getElementById('ridesCountTag').innerText = `${cityRides.length} طلبات`;
+
+            if (cityRides.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-8 text-center rounded-2xl border border-slate-200 text-slate-400">
+                        <i class="fa-solid fa-route text-3xl mb-2 text-slate-300"></i>
+                        <p class="text-sm">لا يوجد طلبات توصيل جديدة متاحة حالياً في مدينة ${currentCity}.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = cityRides.map(ride => `
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-user text-slate-400 text-lg"></i>
+                            <span class="text-xs font-bold text-slate-700">${ride.passengerName}</span>
+                        </div>
+                        <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">${ride.type}</span>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                            <i class="fa-solid fa-circle-dot text-emerald-500 text-[10px]"></i>
+                            <span>من: <strong class="text-slate-800">${ride.pickup}</strong></span>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-slate-600">
+                            <i class="fa-solid fa-location-dot text-amber-500 text-[10px]"></i>
+                            <span>إلى: <strong class="text-slate-800">${ride.dest}</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-2.5 rounded-xl flex items-center justify-between">
+                        <span class="text-xs text-slate-500">سعر العميل المقترح:</span>
+                        <span class="text-base font-bold text-libyaSecondary">${ride.offeredPrice} د.ل</span>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                        <button onclick="acceptPassengerPrice(${ride.id}, ${ride.offeredPrice})" class="w-full sm:w-1/2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1 shadow-sm">
+                            <i class="fa-solid fa-check"></i> قبول فوراً (${ride.offeredPrice} د.ل)
+                        </button>
+
+                        <div class="w-full sm:w-1/2 flex items-center gap-1">
+                            <input type="number" id="counter-input-${ride.id}" placeholder="السعر المقابل" class="w-2/3 bg-slate-100 border border-slate-300 rounded-xl px-2 py-1.5 text-xs text-center font-bold focus:outline-none">
+                            <button onclick="submitCounterOffer(${ride.id})" class="w-1/3 bg-libyaAccent hover:bg-amber-600 text-white font-bold py-2 rounded-xl text-xs shadow-sm">
+                                مساومة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Render Admin Dashboard
+        function renderAdminDashboard() {
+            // Stats
+            document.getElementById('statTotalDrivers').innerText = `${drivers.length} سائقين`;
+            const pending = drivers.filter(d => !d.isApproved);
+            document.getElementById('statPendingApprovals').innerText = `${pending.length} طلبات`;
+            const active = drivers.filter(d => d.subActive && d.isApproved);
+            document.getElementById('statActiveSubs').innerText = `${active.length} سائقين`;
+
+            // Pending Approvals Table
+            const pendingTable = document.getElementById('pendingDriversTable');
+            if (pending.length === 0) {
+                pendingTable.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-xs text-slate-400">لا توجد طلبات توثيق معلقة جديدة.</td></tr>`;
+            } else {
+                pendingTable.innerHTML = pending.map(d => `
+                    <tr>
+                        <td class="py-3 px-4 font-bold text-slate-800">${d.name} <span class="block text-[11px] font-normal text-slate-500">${d.phone}</span></td>
+                        <td class="py-3 px-4">${d.city}</td>
+                        <td class="py-3 px-4">${d.carInfo} <span class="block text-[11px] text-slate-400">${d.plateNumber}</span></td>
+                        <td class="py-3 px-4 text-xs text-blue-600 underline cursor-pointer"><i class="fa-solid fa-file-image ml-1"></i> ${d.docType}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="approveDriver(${d.id})" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs px-3 py-1 rounded-lg shadow">
+                                توثيق وتفعيل
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+
+            // All Drivers Subscriptions Table
+            const allTable = document.getElementById('allDriversTable');
+            allTable.innerHTML = drivers.map(d => `
+                <tr>
+                    <td class="py-3 px-4 font-bold text-slate-800">${d.name} <span class="block text-[11px] font-normal text-slate-500">${d.phone}</span></td>
+                    <td class="py-3 px-4">${d.city}</td>
+                    <td class="py-3 px-4">
+                        ${d.isApproved ? '<span class="text-emerald-600 text-xs font-bold"><i class="fa-solid fa-check-circle"></i> موثق</span>' : '<span class="text-amber-600 text-xs font-bold">قيد المراجعة</span>'}
+                    </td>
+                    <td class="py-3 px-4">
+                        ${d.subActive ? '<span class="bg-emerald-100 text-emerald-800 text-[11px] px-2 py-0.5 rounded-full font-bold">نشط</span>' : '<span class="bg-red-100 text-red-800 text-[11px] px-2 py-0.5 rounded-full font-bold">منتهي</span>'}
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-600">
+                        ${d.subActive ? `متبقي ${d.subDaysLeft} يوم` : 'منتهي الصلاحية'}
+                    </td>
+                    <td class="py-3 px-4 text-center">
+                        <button onclick="renewSubscription(${d.id})" class="bg-libyaPrimary hover:bg-blue-900 text-white text-xs px-3 py-1 rounded-lg font-bold shadow">
+                            تجديد (30 يوم)
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Global Render
+        function renderAll() {
+            renderPassengerRides();
+            renderDriverRides();
+            renderAdminDashboard();
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            renderAll();
+        };
+    </script>
+</body>
+</html>
